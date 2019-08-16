@@ -50,11 +50,8 @@ def train(args, epoch, loader, model, optimizer, scheduler, device):
         lr = optimizer.param_groups[0]['lr']
 
         loader.set_description(
-            (
-                f'epoch: {epoch + 1}; loss: {loss.item():.5f}; '
-                f'acc: {accuracy:.5f}; lr: {lr:.5f}'
-            )
-        )
+            (f'epoch: {epoch + 1}; loss: {loss.item():.5f}; '
+             f'acc: {accuracy:.5f}; lr: {lr:.5f}'))
 
 
 class PixelTransform:
@@ -80,6 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_cond_res_block', type=int, default=3)
     parser.add_argument('--dropout', type=float, default=0.1)
     parser.add_argument('--amp', type=str, default='O0')
+    parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--sched', type=str)
     parser.add_argument('--ckpt', type=str)
     parser.add_argument('path', type=str)
@@ -88,12 +86,15 @@ if __name__ == '__main__':
 
     print(args)
 
-    device = 'cuda'
+    device = args.device
 
-    dataset = LMDBDataset(args.path)
+    dataset = LMDBDataset(f"lmdb/{args.path}")
     loader = DataLoader(
-        dataset, batch_size=args.batch, shuffle=True, num_workers=4, drop_last=True
-    )
+        dataset,
+        batch_size=args.batch,
+        shuffle=True,
+        num_workers=4,
+        drop_last=True)
 
     ckpt = {}
 
@@ -144,12 +145,14 @@ if __name__ == '__main__':
     scheduler = None
     if args.sched == 'cycle':
         scheduler = CycleScheduler(
-            optimizer, args.lr, n_iter=len(loader) * args.epoch, momentum=None
-        )
+            optimizer, args.lr, n_iter=len(loader) * args.epoch, momentum=None)
 
     for i in range(args.epoch):
         train(args, i, loader, model, optimizer, scheduler, device)
         torch.save(
-            {'model': model.module.state_dict(), 'args': args},
+            {
+                'model': model.module.state_dict(),
+                'args': args
+            },
             f'checkpoint/pixelsnail_{args.hier}_{str(i + 1).zfill(3)}.pt',
         )

@@ -34,3 +34,13 @@ Maybe it is better to use larger PixelSNAIL model. Currently model size is reduc
 Note: This is a training sample
 
 ![Sample from Stage 1 (VQ-VAE)](stage1_sample.png)
+
+## Test Run with CPU
+
+```bash
+python train_vqvae.py --device cpu data/animals
+python extract_code.py --ckpt checkpoint/vqvae_560.pt --name animals --device cpu data/
+python train_pixelsnail.py --hier top --device cpu animals
+python train_pixelsnail.py --hier bottom --device cpu animals
+python sample.py --vqvae vqvae_560.pt --top pixelsnail_top_420.pt --bottom pixelsnail_bottom_420.pt --device cpu sample.png
+```

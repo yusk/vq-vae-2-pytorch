@@ -43,13 +43,10 @@ def train(epoch, loader, model, optimizer, scheduler, device):
 
         lr = optimizer.param_groups[0]['lr']
 
-        loader.set_description(
-            (
-                f'epoch: {epoch + 1}; mse: {recon_loss.item():.5f}; '
-                f'latent: {latent_loss.item():.3f}; avg mse: {mse_sum / mse_n:.5f}; '
-                f'lr: {lr:.5f}'
-            )
-        )
+        loader.set_description((
+            f'epoch: {epoch + 1}; mse: {recon_loss.item():.5f}; '
+            f'latent: {latent_loss.item():.3f}; avg mse: {mse_sum / mse_n:.5f}; '
+            f'lr: {lr:.5f}'))
 
         if i % 100 == 0:
             model.eval()
@@ -75,6 +72,7 @@ if __name__ == '__main__':
     parser.add_argument('--size', type=int, default=256)
     parser.add_argument('--epoch', type=int, default=560)
     parser.add_argument('--lr', type=float, default=3e-4)
+    parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--sched', type=str)
     parser.add_argument('path', type=str)
 
@@ -82,16 +80,14 @@ if __name__ == '__main__':
 
     print(args)
 
-    device = 'cuda'
+    device = args.device
 
-    transform = transforms.Compose(
-        [
-            transforms.Resize(args.size),
-            transforms.CenterCrop(args.size),
-            transforms.ToTensor(),
-            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-        ]
-    )
+    transform = transforms.Compose([
+        transforms.Resize(args.size),
+        transforms.CenterCrop(args.size),
+        transforms.ToTensor(),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+    ])
 
     dataset = datasets.ImageFolder(args.path, transform=transform)
     loader = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=4)
@@ -102,11 +98,9 @@ if __name__ == '__main__':
     scheduler = None
     if args.sched == 'cycle':
         scheduler = CycleScheduler(
-            optimizer, args.lr, n_iter=len(loader) * args.epoch, momentum=None
-        )
+            optimizer, args.lr, n_iter=len(loader) * args.epoch, momentum=None)
 
     for i in range(args.epoch):
         train(i, loader, model, optimizer, scheduler, device)
-        torch.save(
-            model.module.state_dict(), f'checkpoint/vqvae_{str(i + 1).zfill(3)}.pt'
-        )
+        torch.save(model.module.state_dict(),
+                   f'checkpoint/vqvae_{str(i + 1).zfill(3)}.pt')
